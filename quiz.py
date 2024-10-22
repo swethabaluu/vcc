@@ -85,10 +85,13 @@ def quiz_app():
             elapsed_time = 0
             while elapsed_time < 15:  # 15 seconds for each question
                 elapsed_time = time.time() - start_time
-                if st.button("Submit Answer", key=f"submit_{i}"):
-                    break
                 st.text(f"Time remaining: {15 - int(elapsed_time)} seconds")
                 time.sleep(1)
+                if st.button("Submit Answer", key=f"submit_answer_{i}"):  # Unique button key
+                    break
+            else:
+                st.warning("Time's up! Moving to the next question.")
+                selected_option = None  # No answer if time's up
 
             is_correct = selected_option in question_data['answer']
             feedback.append((question_data['question'], selected_option, is_correct))
@@ -99,14 +102,14 @@ def quiz_app():
             else:
                 st.error(f"Wrong! The correct answer is: {', '.join(question_data['answer'])}")
 
-            save_user_answer(user_name, question_data['question'], [selected_option], is_correct)
+            save_user_answer(user_name, question_data['question'], [selected_option] if selected_option else [], is_correct)
 
         if st.button("Submit Quiz"):
             st.subheader(f"Your final score: {score}/{total_questions}")
             st.write("Thank you for playing!")
             st.write("User Feedback:")
             for q, ans, correct in feedback:
-                st.write(f"Q: {q} | Your Answer: {ans} | Correct: {'Yes' if correct else 'No'}")
+                st.write(f"Q: {q} | Your Answer: {ans if ans else 'No Answer'} | Correct: {'Yes' if correct else 'No'}")
 
             # Show Leaderboard
             st.write("Leaderboard:")
