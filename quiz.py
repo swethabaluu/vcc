@@ -79,14 +79,14 @@ def quiz_app():
 
             # Timer for each question
             start_time = time.time()
-            selected_option = st.radio("Choose your answer:", question_data['options'], key=f"radio_{i}")
+            selected_option = st.radio("Choose your answer:", question_data['options'], key=f"radio_{user_name}_{i}")
 
             # Timer Logic
             elapsed_time = 0
             time_remaining = 15  # Set time limit for each question
             while elapsed_time < time_remaining:
                 elapsed_time = time.time() - start_time
-                if st.button("Submit Answer", key=f"submit_answer_{i}"):
+                if st.button("Submit Answer", key=f"submit_answer_{user_name}_{i}"):  # Unique button key
                     break
                 st.text(f"Time remaining: {time_remaining - int(elapsed_time)} seconds")
                 time.sleep(1)
