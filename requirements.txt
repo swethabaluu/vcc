@@ -1,2 +1,2 @@
-streamlit
-pymongo
+streamlit==1.25.0
+pymongo==4.5.0

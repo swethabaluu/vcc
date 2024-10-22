@@ -3,10 +3,12 @@ from pymongo import MongoClient
 import random
 
 # MongoDB Connection
-CONNECTION_STRING = "mongodb+srv://swethabalu276:Student123@cluster0.tvrpc.mongodb.net/quiz_app?retryWrites=true&w=majority"
+CONNECTION_STRING = "mongodb+srv://swethabalu276:Student123@cluster0.tvrpc.mongodb.net/vcc?retryWrites=true&w=majority"
 client = MongoClient(CONNECTION_STRING)
-db = client['quiz_app']  # The database name
-questions_collection = db['questions']  # The collection name
+
+# Specify the correct database and collection
+db = client['vcc']  # Correct database name is 'vcc'
+questions_collection = db['questions']  # Assuming 'questions' is the collection name
 
 # Function to fetch questions from MongoDB
 def fetch_questions():
