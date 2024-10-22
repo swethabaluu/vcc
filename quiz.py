@@ -139,8 +139,15 @@ def quiz_app():
         random.shuffle(questions)
 
         total_questions = len(questions)
-        current_question_index = st.session_state.get("current_question_index", 0)
-        score = st.session_state.get("score", 0)
+        
+        # Session state to track the current question index and score
+        if "current_question_index" not in st.session_state:
+            st.session_state.current_question_index = 0
+            st.session_state.score = 0
+
+        # Get the current question index and question data
+        current_question_index = st.session_state.current_question_index
+        score = st.session_state.score
 
         # Display current question
         if current_question_index < total_questions:
@@ -157,19 +164,15 @@ def quiz_app():
                 is_correct = user_answers == question_data['answer']
                 if is_correct:
                     st.success("Correct!")
-                    score += 1
+                    st.session_state.score += 1
                 else:
                     st.error(f"Wrong! The correct answer is: {', '.join(question_data['answer'])}")
 
                 # Save user's answer to the database
                 save_user_answer(username, question_data['question'], user_answers, is_correct)
 
-                # Update session state for next question
-                st.session_state.current_question_index = current_question_index + 1
-                st.session_state.score = score
-                
-                # Clear checkboxes after submitting
-                st.experimental_rerun()  # Rerun to clear checkboxes
+                # Move to the next question
+                st.session_state.current_question_index += 1
 
         else:
             st.subheader(f"Your final score: {score}/{total_questions}")
