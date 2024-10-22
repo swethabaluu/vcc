@@ -117,6 +117,7 @@ def quiz_app():
     username = st.sidebar.text_input("Username:")
     password = st.sidebar.text_input("Password:", type='password')
 
+    # Sign up option
     if option == "Sign Up":
         if st.sidebar.button("Register"):
             if register_user(username, password):
@@ -124,6 +125,7 @@ def quiz_app():
             else:
                 st.sidebar.error("Username already exists.")
     
+    # Sign in option
     elif option == "Sign In":
         if st.sidebar.button("Login"):
             if authenticate_user(username, password):
@@ -164,3 +166,4 @@ def quiz_app():
 # Main execution
 if __name__ == "__main__":
     quiz_app()
+ 
