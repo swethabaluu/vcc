@@ -114,9 +114,10 @@ def quiz_app():
     st.sidebar.title("User Authentication")
     option = st.sidebar.selectbox("Select an option:", ["Sign In", "Sign Up"])
     
+    username = st.sidebar.text_input("Username:")
+    password = st.sidebar.text_input("Password:", type='password')
+
     if option == "Sign Up":
-        username = st.sidebar.text_input("Username:")
-        password = st.sidebar.text_input("Password:", type='password')
         if st.sidebar.button("Register"):
             if register_user(username, password):
                 st.sidebar.success("Registration successful! You can now sign in.")
@@ -124,8 +125,6 @@ def quiz_app():
                 st.sidebar.error("Username already exists.")
     
     elif option == "Sign In":
-        username = st.sidebar.text_input("Username:")
-        password = st.sidebar.text_input("Password:", type='password')
         if st.sidebar.button("Login"):
             if authenticate_user(username, password):
                 st.sidebar.success("Login successful!")
@@ -133,34 +132,31 @@ def quiz_app():
                 st.sidebar.error("Invalid username or password.")
     
     # Proceed to quiz if authenticated
-    if st.sidebar.button("Start Quiz") and authenticate_user(username, password):
+    if authenticate_user(username, password):
         questions = fetch_questions()
         random.shuffle(questions)
 
         score = 0
         total_questions = len(questions)
 
+        # Display all questions and collect answers
+        user_answers = []
+        
         for i, question_data in enumerate(questions):
             st.subheader(f"Question {i + 1}: {question_data['question']}")
-            user_answers = []
-
+            
             # Display options with checkboxes
             for option in question_data['options']:
                 if st.checkbox(option, key=f"option_{i}_{option}"):
-                    user_answers.append(option)
-
-            if st.button(f"Submit Answer for Question {i + 1}", key=f"submit{i}"):
-                is_correct = user_answers == question_data['answer']
-                if is_correct:
-                    st.success("Correct!")
-                    score += 1
-                else:
-                    st.error(f"Wrong! The correct answer is: {', '.join(question_data['answer'])}")
-
-                # Save user's answer to the database
-                save_user_answer(username, question_data['question'], user_answers, is_correct)
+                    user_answers.append((question_data['question'], option))  # Collect answers
 
         if st.button("Submit Quiz"):
+            for question, answer in user_answers:
+                is_correct = answer in [ans for ans in questions_collection.find_one({"question": question})["answer"]]
+                if is_correct:
+                    score += 1
+                save_user_answer(username, question, [answer], is_correct)
+
             st.subheader(f"Your final score: {score}/{total_questions}")
             st.write("Thank you for playing!")
             visualize_results(username)
