@@ -37,6 +37,10 @@ def insert_sample_questions():
         if questions_collection.count_documents({"question": question["question"]}) == 0:
             questions_collection.insert_one(question)
 
+# Function to check if the user's answer is correct
+def check_answer(user_answers, correct_answers):
+    return set(user_answers) == set(correct_answers)
+
 # Function to save user answers to MongoDB
 def save_user_answer(user_name, question, user_answers, is_correct):
     answer_document = {
@@ -74,26 +78,19 @@ def quiz_app():
             st.subheader(f"Question {i + 1}: {question_data['question']}")
 
             # Timer for each question
+            start_time = time.time()
             selected_option = st.radio("Choose your answer:", question_data['options'], key=f"radio_{i}")
 
             # Timer Logic
-            start_time = time.time()
-            while True:
+            elapsed_time = 0
+            time_remaining = 15  # Set time limit for each question
+            while elapsed_time < time_remaining:
                 elapsed_time = time.time() - start_time
-                remaining_time = 15 - int(elapsed_time)
-                
-                # Display the remaining time
-                st.text(f"Time remaining: {remaining_time} seconds")
-                
-                # Break the loop if time runs out
-                if remaining_time <= 0:
-                    st.warning("Time's up! Moving to the next question.")
-                    selected_option = None  # No answer if time's up
+                if st.button("Submit Answer", key=f"submit_answer_{i}"):
                     break
-                
-                if st.button("Submit Answer", key=f"submit_answer_{i}"):  # Unique button key
-                    break
-            
+                st.text(f"Time remaining: {time_remaining - int(elapsed_time)} seconds")
+                time.sleep(1)
+
             is_correct = selected_option in question_data['answer']
             feedback.append((question_data['question'], selected_option, is_correct))
 
@@ -103,14 +100,14 @@ def quiz_app():
             else:
                 st.error(f"Wrong! The correct answer is: {', '.join(question_data['answer'])}")
 
-            save_user_answer(user_name, question_data['question'], [selected_option] if selected_option else [], is_correct)
+            save_user_answer(user_name, question_data['question'], [selected_option], is_correct)
 
         if st.button("Submit Quiz"):
             st.subheader(f"Your final score: {score}/{total_questions}")
             st.write("Thank you for playing!")
             st.write("User Feedback:")
             for q, ans, correct in feedback:
-                st.write(f"Q: {q} | Your Answer: {ans if ans else 'No Answer'} | Correct: {'Yes' if correct else 'No'}")
+                st.write(f"Q: {q} | Your Answer: {ans} | Correct: {'Yes' if correct else 'No'}")
 
             # Show Leaderboard
             st.write("Leaderboard:")
