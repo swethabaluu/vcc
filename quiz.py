@@ -37,10 +37,6 @@ def insert_sample_questions():
         if questions_collection.count_documents({"question": question["question"]}) == 0:
             questions_collection.insert_one(question)
 
-# Function to check if the user's answer is correct
-def check_answer(user_answers, correct_answers):
-    return set(user_answers) == set(correct_answers)
-
 # Function to save user answers to MongoDB
 def save_user_answer(user_name, question, user_answers, is_correct):
     answer_document = {
@@ -78,21 +74,26 @@ def quiz_app():
             st.subheader(f"Question {i + 1}: {question_data['question']}")
 
             # Timer for each question
-            start_time = time.time()
             selected_option = st.radio("Choose your answer:", question_data['options'], key=f"radio_{i}")
 
             # Timer Logic
-            elapsed_time = 0
-            while elapsed_time < 15:  # 15 seconds for each question
+            start_time = time.time()
+            while True:
                 elapsed_time = time.time() - start_time
-                st.text(f"Time remaining: {15 - int(elapsed_time)} seconds")
-                time.sleep(1)
+                remaining_time = 15 - int(elapsed_time)
+                
+                # Display the remaining time
+                st.text(f"Time remaining: {remaining_time} seconds")
+                
+                # Break the loop if time runs out
+                if remaining_time <= 0:
+                    st.warning("Time's up! Moving to the next question.")
+                    selected_option = None  # No answer if time's up
+                    break
+                
                 if st.button("Submit Answer", key=f"submit_answer_{i}"):  # Unique button key
                     break
-            else:
-                st.warning("Time's up! Moving to the next question.")
-                selected_option = None  # No answer if time's up
-
+            
             is_correct = selected_option in question_data['answer']
             feedback.append((question_data['question'], selected_option, is_correct))
 
