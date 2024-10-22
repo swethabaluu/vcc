@@ -113,4 +113,3 @@ def quiz_app():
 # Main execution
 if __name__ == "__main__":
     quiz_app()
-i
