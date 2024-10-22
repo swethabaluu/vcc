@@ -138,27 +138,40 @@ def quiz_app():
         questions = fetch_questions()
         random.shuffle(questions)
 
-        score = 0
         total_questions = len(questions)
+        current_question_index = st.session_state.get("current_question_index", 0)
+        score = st.session_state.get("score", 0)
 
-        # Display all questions and collect answers
-        user_answers = []
-        
-        for i, question_data in enumerate(questions):
-            st.subheader(f"Question {i + 1}: {question_data['question']}")
-            
+        # Display current question
+        if current_question_index < total_questions:
+            question_data = questions[current_question_index]
+            st.subheader(f"Question {current_question_index + 1}: {question_data['question']}")
+            user_answers = []
+
             # Display options with checkboxes
             for option in question_data['options']:
-                if st.checkbox(option, key=f"option_{i}_{option}"):
-                    user_answers.append((question_data['question'], option))  # Collect answers
+                if st.checkbox(option, key=f"option_{current_question_index}_{option}"):
+                    user_answers.append(option)
 
-        if st.button("Submit Quiz"):
-            for question, answer in user_answers:
-                is_correct = answer in [ans for ans in questions_collection.find_one({"question": question})["answer"]]
+            if st.button("Submit Answer"):
+                is_correct = user_answers == question_data['answer']
                 if is_correct:
+                    st.success("Correct!")
                     score += 1
-                save_user_answer(username, question, [answer], is_correct)
+                else:
+                    st.error(f"Wrong! The correct answer is: {', '.join(question_data['answer'])}")
 
+                # Save user's answer to the database
+                save_user_answer(username, question_data['question'], user_answers, is_correct)
+
+                # Update session state for next question
+                st.session_state.current_question_index = current_question_index + 1
+                st.session_state.score = score
+                
+                # Clear checkboxes after submitting
+                st.experimental_rerun()  # Rerun to clear checkboxes
+
+        else:
             st.subheader(f"Your final score: {score}/{total_questions}")
             st.write("Thank you for playing!")
             visualize_results(username)
@@ -166,4 +179,3 @@ def quiz_app():
 # Main execution
 if __name__ == "__main__":
     quiz_app()
- 
