@@ -1,9 +1,13 @@
+import os
 import streamlit as st
 from pymongo import MongoClient
 import random
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # MongoDB Connection
-CONNECTION_STRING = "mongodb+srv://swethabalu276:Student123@cluster0.tvrpc.mongodb.net/vcc?retryWrites=true&w=majority"
+CONNECTION_STRING =  os.getenv("MONGO_URI")
 client = MongoClient(CONNECTION_STRING)
 
 # Specify the correct database and collection
