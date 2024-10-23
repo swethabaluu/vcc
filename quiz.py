@@ -30,7 +30,46 @@ def insert_sample_questions():
             "options": ["Earth", "Mars", "Venus", "Jupiter"],
             "answer": "Mars"
         },
-        # Add other questions here...
+        {
+            "question": "What is the largest ocean on Earth?",
+            "options": ["Atlantic", "Indian", "Arctic", "Pacific"],
+            "answer": "Pacific"
+        },
+        {
+            "question": "Who wrote 'To Kill a Mockingbird'?",
+            "options": ["Harper Lee", "J.K. Rowling", "Ernest Hemingway", "Jane Austen"],
+            "answer": "Harper Lee"
+        },
+        {
+            "question": "What is the boiling point of water?",
+            "options": ["90°C", "95°C", "100°C", "105°C"],
+            "answer": "100°C"
+        },
+        {
+            "question": "Which country is known as the Land of Rising Sun?",
+            "options": ["China", "Japan", "South Korea", "Vietnam"],
+            "answer": "Japan"
+        },
+        {
+            "question": "Who discovered gravity?",
+            "options": ["Isaac Newton", "Albert Einstein", "Galileo", "Marie Curie"],
+            "answer": "Isaac Newton"
+        },
+        {
+            "question": "What is the chemical symbol for gold?",
+            "options": ["Go", "G", "Au", "Ag"],
+            "answer": "Au"
+        },
+        {
+            "question": "Which is the smallest continent?",
+            "options": ["Asia", "Europe", "Australia", "Antarctica"],
+            "answer": "Australia"
+        },
+        {
+            "question": "What is the square root of 64?",
+            "options": ["6", "7", "8", "9"],
+            "answer": "8"
+        }
     ]
     for question in questions:
         if questions_collection.count_documents({"question": question["question"]}) == 0:
@@ -70,7 +109,7 @@ def save_user_answers(username, answers):
 def fetch_questions():
     return list(questions_collection.find())
 
-# Function to display quiz and get user answers using buttons
+# Function to display quiz and get user answers without page refresh
 def quiz(username):
     st.title("Quiz Time!")
 
@@ -78,21 +117,23 @@ def quiz(username):
     questions = fetch_questions()
     random.shuffle(questions)
 
-    if "user_answers" not in st.session_state:
-        st.session_state.user_answers = [None] * 10
+    # Initialize session state to hold user answers
+    if 'answers' not in st.session_state:
+        st.session_state['answers'] = [None] * 10
 
-    # Iterate through all questions, display them with answer options as buttons
+    # Iterate through all questions, display them with answer options as select boxes
     for i, question in enumerate(questions[:10]):
         st.subheader(f"Question {i+1}: {question['question']}")
-
+        
+        # Use selectbox to allow users to select answers
         selected_answer = st.selectbox(
             f"Select an answer for Question {i+1}",
             options=["Select an answer"] + question['options'],
             key=f"question_{i}"
         )
-
+        
         if selected_answer != "Select an answer":
-            st.session_state.user_answers[i] = {
+            st.session_state['answers'][i] = {
                 "question": question['question'],
                 "user_answer": selected_answer,
                 "correct_answer": question['answer']
@@ -100,10 +141,11 @@ def quiz(username):
 
     # Submit Button at the end of the quiz
     if st.button("Submit Quiz"):
-        if None not in st.session_state.user_answers:
-            score = save_user_answers(username, st.session_state.user_answers)
+        if None not in st.session_state['answers']:  # Ensure all questions are answered
+            score = save_user_answers(username, st.session_state['answers'])
             st.success("Quiz submitted successfully!")
             st.write(f"Your final score is {score}/10.")
+            st.write("You can view your score anytime from the 'View Score' option in the sidebar.")
         else:
             st.error("Please answer all questions before submitting.")
 
@@ -122,9 +164,9 @@ def view_score(username):
 # Main Streamlit App
 def quiz_app():
     insert_sample_questions()  # Insert questions if they don't already exist
-
+    
     st.sidebar.title("Authentication")
-
+    
     # Sign up or Sign in Option
     auth_option = st.sidebar.selectbox("Choose an option", ["Sign Up", "Sign In"])
 
@@ -143,6 +185,7 @@ def quiz_app():
         if st.sidebar.button("Login"):
             if authenticate_user(username, password):
                 st.sidebar.success(f"Welcome {username}! You are logged in.")
+                # Show options to either take a quiz or view score
                 menu_option = st.sidebar.selectbox("Menu", ["Take Quiz", "View Score"])
                 if menu_option == "Take Quiz":
                     quiz(username)  # Display quiz questions
