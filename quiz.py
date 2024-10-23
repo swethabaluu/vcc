@@ -139,15 +139,19 @@ def quiz(username):
                 "correct_answer": question['answer']
             }
 
-    # Submit Button at the end of the quiz
-    if st.button("Submit Quiz"):
-        if None not in st.session_state['answers']:  # Ensure all questions are answered
-            score = save_user_answers(username, st.session_state['answers'])
-            st.success("Quiz submitted successfully!")
-            st.write(f"Your final score is {score}/10.")
-            st.write("You can view your score anytime from the 'View Score' option in the sidebar.")
-        else:
-            st.error("Please answer all questions before submitting.")
+    # Check if all questions have been answered
+    all_answered = None not in st.session_state['answers']
+
+    # Disable the submit button until all questions are answered
+    submit_button = st.button("Submit Quiz", disabled=not all_answered)
+
+    if submit_button:
+        score = save_user_answers(username, st.session_state['answers'])
+        st.success("Quiz submitted successfully!")
+        st.write(f"Your final score is {score}/10.")
+        st.write("You can view your score anytime from the 'View Score' option in the sidebar.")
+    elif not all_answered:
+        st.warning("Please answer all questions before submitting.")
 
 # View score of logged-in user
 def view_score(username):
