@@ -117,34 +117,38 @@ def quiz(username):
     questions = fetch_questions()
     random.shuffle(questions)
 
-    user_answers = []
+    # Session state to store answers
+    if 'user_answers' not in st.session_state:
+        st.session_state.user_answers = [None] * 10
 
-    # Iterate through all questions, display them with answer options as buttons
+    # Iterate through all questions, display them with answer options
     for i, question in enumerate(questions[:10]):
         st.subheader(f"Question {i+1}: {question['question']}")
 
         # Use buttons to allow users to select answers
-        selected_answer = st.selectbox(
+        st.session_state.user_answers[i] = st.radio(
             f"Select an answer for Question {i+1}",
-            options=["Select an answer"] + question['options'],  # default is a placeholder
-            key=f"question_{i}"
+            options=question['options'],
+            index=question['options'].index(st.session_state.user_answers[i]) if st.session_state.user_answers[i] else 0
         )
-        if selected_answer != "Select an answer":  # Ignore if no answer selected
-            user_answers.append({
-                "question": question['question'],
-                "user_answer": selected_answer,
-                "correct_answer": question['answer']
-            })
 
     # Submit Button at the end of the quiz
     if st.button("Submit Quiz"):
-        if len(user_answers) == 10:  # Ensure all questions are answered
+        if None in st.session_state.user_answers:
+            st.error("Please answer all questions before submitting.")
+        else:
+            user_answers = []
+            for i, question in enumerate(questions[:10]):
+                user_answers.append({
+                    "question": question['question'],
+                    "user_answer": st.session_state.user_answers[i],
+                    "correct_answer": question['answer']
+                })
+
             score = save_user_answers(username, user_answers)
             st.success("Quiz submitted successfully!")
             st.write(f"Your final score is {score}/10.")
             st.write("You can view your score anytime from the 'View Score' option in the sidebar.")
-        else:
-            st.error("Please answer all questions before submitting.")
 
 # View score of logged-in user
 def view_score(username):
