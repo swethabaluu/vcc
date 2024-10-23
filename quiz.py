@@ -3,7 +3,6 @@ import streamlit as st
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import random
-import pandas as pd
 
 # Load environment variables for MongoDB connection
 load_dotenv()
@@ -46,7 +45,6 @@ def insert_sample_questions():
             "options": ["90°C", "95°C", "100°C", "105°C"],
             "answer": "100°C"
         },
-        # Add 5 more questions to make it 10 in total
         {
             "question": "Which country is known as the Land of Rising Sun?",
             "options": ["China", "Japan", "South Korea", "Vietnam"],
@@ -111,7 +109,7 @@ def save_user_answers(username, answers):
 def fetch_questions():
     return list(questions_collection.find())
 
-# Function to display quiz and get user answers
+# Function to display quiz and get user answers using buttons
 def quiz(username):
     st.title("Quiz Time!")
 
@@ -120,37 +118,45 @@ def quiz(username):
     random.shuffle(questions)
 
     user_answers = []
-    
-    # Iterate through questions
+
+    # Iterate through all questions, display them with answer options as buttons
     for i, question in enumerate(questions[:10]):
         st.subheader(f"Question {i+1}: {question['question']}")
-        user_answer = st.radio(
-            f"Select an answer for Question {i+1}", 
-            question['options'], 
+
+        # Use buttons to allow users to select answers
+        selected_answer = st.selectbox(
+            f"Select an answer for Question {i+1}",
+            options=["Select an answer"] + question['options'],  # default is a placeholder
             key=f"question_{i}"
         )
-        user_answers.append({
-            "question": question['question'],
-            "user_answer": user_answer,
-            "correct_answer": question['answer']
-        })
+        if selected_answer != "Select an answer":  # Ignore if no answer selected
+            user_answers.append({
+                "question": question['question'],
+                "user_answer": selected_answer,
+                "correct_answer": question['answer']
+            })
 
     # Submit Button at the end of the quiz
     if st.button("Submit Quiz"):
-        score = save_user_answers(username, user_answers)
-        st.success(f"Your final score is {score}/10.")
-        
-        # Option to see the reflection in DB (Optional visualization)
-        view_score(username)
+        if len(user_answers) == 10:  # Ensure all questions are answered
+            score = save_user_answers(username, user_answers)
+            st.success("Quiz submitted successfully!")
+            st.write(f"Your final score is {score}/10.")
+            st.write("You can view your score anytime from the 'View Score' option in the sidebar.")
+        else:
+            st.error("Please answer all questions before submitting.")
 
 # View score of logged-in user
 def view_score(username):
+    st.title("Your Quiz Score")
     user_results = answers_collection.find({"username": username}).sort("score", -1)
-    if user_results:
-        for result in user_results:
-            st.write(f"Your Score: {result['score']}")
-            for answer in result['answers']:
-                st.write(f"Q: {answer['question']}, Your Answer: {answer['user_answer']}, Correct Answer: {answer['correct_answer']}")
+    if user_results.count() > 0:
+        latest_result = user_results[0]
+        st.write(f"Your latest score is {latest_result['score']}/10.")
+        for answer in latest_result['answers']:
+            st.write(f"Q: {answer['question']}, Your Answer: {answer['user_answer']}, Correct Answer: {answer['correct_answer']}")
+    else:
+        st.warning("You haven't completed any quizzes yet.")
 
 # Main Streamlit App
 def quiz_app():
@@ -176,7 +182,12 @@ def quiz_app():
         if st.sidebar.button("Login"):
             if authenticate_user(username, password):
                 st.sidebar.success(f"Welcome {username}! You are logged in.")
-                quiz(username)  # Call quiz function after successful login
+                # Show options to either take a quiz or view score
+                menu_option = st.sidebar.selectbox("Menu", ["Take Quiz", "View Score"])
+                if menu_option == "Take Quiz":
+                    quiz(username)  # Display quiz questions
+                elif menu_option == "View Score":
+                    view_score(username)  # Show user's score
             else:
                 st.sidebar.error("Invalid credentials! Please try again.")
 
