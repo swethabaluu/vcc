@@ -139,43 +139,44 @@ def quiz_app():
         random.shuffle(questions)
 
         total_questions = len(questions)
-        
-        # Session state to track the current question index and score
-        if "current_question_index" not in st.session_state:
-            st.session_state.current_question_index = 0
+
+        # Session state to track the score
+        if "score" not in st.session_state:
             st.session_state.score = 0
 
-        # Get the current question index and question data
-        current_question_index = st.session_state.current_question_index
         score = st.session_state.score
+        user_answers = {}
 
-        # Display current question
-        if current_question_index < total_questions:
-            question_data = questions[current_question_index]
-            st.subheader(f"Question {current_question_index + 1}: {question_data['question']}")
-            user_answers = []
+        # Display all 5 questions with options
+        st.subheader("Please answer all questions:")
+        for i, question_data in enumerate(questions[:5]):
+            st.markdown(f"### Question {i + 1}: {question_data['question']}")
+            
+            # Use radio buttons to select one option per question
+            user_answers[question_data['question']] = st.radio(
+                label="Select your answer:",
+                options=question_data['options'],
+                key=f"question_{i}"
+            )
 
-            # Display options with checkboxes
-            for option in question_data['options']:
-                if st.checkbox(option, key=f"option_{current_question_index}_{option}"):
-                    user_answers.append(option)
-
-            if st.button("Submit Answer"):
-                is_correct = user_answers == question_data['answer']
-                if is_correct:
-                    st.success("Correct!")
+        # Submit Button at the end of the quiz
+        if st.button("Submit Quiz"):
+            # Calculate the score and save each answer
+            for i, question_data in enumerate(questions[:5]):
+                selected_option = user_answers[question_data['question']]
+                correct = selected_option == question_data['answer'][0]
+                
+                if correct:
                     st.session_state.score += 1
+                    st.success(f"Question {i + 1}: Correct! The answer is {question_data['answer'][0]}.")
                 else:
-                    st.error(f"Wrong! The correct answer is: {', '.join(question_data['answer'])}")
+                    st.error(f"Question {i + 1}: Wrong! The correct answer is {question_data['answer'][0]}.")
 
                 # Save user's answer to the database
-                save_user_answer(username, question_data['question'], user_answers, is_correct)
+                save_user_answer(username, question_data['question'], [selected_option], correct)
 
-                # Move to the next question
-                st.session_state.current_question_index += 1
-
-        else:
-            st.subheader(f"Your final score: {score}/{total_questions}")
+            # Display final score
+            st.subheader(f"Your final score: {st.session_state.score}/{total_questions}")
             st.write("Thank you for playing!")
             visualize_results(username)
 
