@@ -89,13 +89,8 @@ def authenticate_user(username, password):
 
 # Function to save user answers and calculate score
 def save_user_answers(username, answers):
-    total_score = 0
-    correct_answers = 0
-    for question in answers:
-        if question['user_answer'] == question['correct_answer']:
-            correct_answers += 1
-    total_score = correct_answers
-
+    total_score = sum(1 for ans in answers if ans['user_answer'] == ans['correct_answer'])
+    
     # Store the result in the database
     answers_collection.insert_one({
         "username": username,
@@ -109,7 +104,7 @@ def save_user_answers(username, answers):
 def fetch_questions():
     return list(questions_collection.find())
 
-# Function to display quiz and get user answers without page refresh
+# Function to display quiz and get user answers
 def quiz(username):
     st.title("Quiz Time!")
 
@@ -117,21 +112,22 @@ def quiz(username):
     questions = fetch_questions()
     random.shuffle(questions)
 
-    # Initialize session state to hold user answers
+    # Initialize session state to hold user answers if not already done
     if 'answers' not in st.session_state:
-        st.session_state['answers'] = [None] * 10
+        st.session_state['answers'] = [None] * len(questions)
 
     # Iterate through all questions, display them with answer options as select boxes
     for i, question in enumerate(questions[:10]):
-        st.subheader(f"Question {i+1}: {question['question']}")
-        
+        st.subheader(f"Question {i + 1}: {question['question']}")
+
         # Use selectbox to allow users to select answers
         selected_answer = st.selectbox(
-            f"Select an answer for Question {i+1}",
+            f"Select an answer for Question {i + 1}",
             options=["Select an answer"] + question['options'],
             key=f"question_{i}"
         )
         
+        # Store the user's answer
         if selected_answer != "Select an answer":
             st.session_state['answers'][i] = {
                 "question": question['question'],
@@ -140,7 +136,7 @@ def quiz(username):
             }
 
     # Check if all questions have been answered
-    all_answered = None not in st.session_state['answers']
+    all_answered = all(ans is not None for ans in st.session_state['answers'])
 
     # Disable the submit button until all questions are answered
     submit_button = st.button("Submit Quiz", disabled=not all_answered)
@@ -150,8 +146,8 @@ def quiz(username):
         st.success("Quiz submitted successfully!")
         st.write(f"Your final score is {score}/10.")
         st.write("You can view your score anytime from the 'View Score' option in the sidebar.")
-    elif not all_answered:
-        st.warning("Please answer all questions before submitting.")
+        # Reset answers after submission
+        st.session_state['answers'] = [None] * len(questions)  # Clear answers for the next quiz
 
 # View score of logged-in user
 def view_score(username):
